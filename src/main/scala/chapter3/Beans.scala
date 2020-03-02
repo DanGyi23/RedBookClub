@@ -17,6 +17,25 @@ object Beans {
     if (as.isEmpty) Nil
     else Cons(as.head, apply(as.tail: _*))
 
+  def tail[A](as: Beans[A]): Beans[A] = {
+    as match {
+      case Nil => Nil
+      case Cons(_, x) => x
+    }
+  }
+
+  def head[A](as: Beans[A]): A = {
+    as match {
+      case Nil => Nil
+      case Cons(x, _) => x
+    }
+  }
+
+  def drop[A](list: Beans[A], n: Int): A = {
+  }
+
+
+
   val x = Beans(1, 2, 3, 4, 5) match {
     case Cons(x, Cons(2, Cons(4, _))) => x
     case Nil => 42
