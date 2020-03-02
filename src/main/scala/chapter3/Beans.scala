@@ -17,22 +17,22 @@ object Beans {
     if (as.isEmpty) Nil
     else Cons(as.head, apply(as.tail: _*))
 
-  def tail[A](as: Beans[A]): Beans[A] = {
+  def tail[A](as: Beans[A]): Either[Beans[A], Nil.type] = {
     as match {
-      case Nil => Nil
-      case Cons(_, x) => x
+      case Nil => Right(Nil)
+      case Cons(_, x) => Left(x)
     }
   }
 
-  def head[A](as: Beans[A]): A = {
+  def head[A](as: Beans[A]): Either[A, Nil.type] = {
     as match {
-      case Nil => Nil
-      case Cons(x, _) => x
+      case Cons(x, _) => Left(x)
+      case Nil => Right(Nil)
     }
   }
 
-  def drop[A](list: Beans[A], n: Int): A = {
-  }
+//  def drop[A](list: Beans[A], n: Int): A = {
+//  }
 
 
 
