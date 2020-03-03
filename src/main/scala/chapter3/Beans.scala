@@ -1,5 +1,7 @@
 package chapter3
 
+import chapter3.Beans.x
+
 sealed trait Beans[+A]
 
 case object Nil extends Beans[Nothing]
@@ -17,22 +19,28 @@ object Beans {
     if (as.isEmpty) Nil
     else Cons(as.head, apply(as.tail: _*))
 
-  def tail[A](as: Beans[A]): Either[Beans[A], Nil.type] = {
+  def tail[A](as: Beans[A]): Option[Beans[A]] = {
     as match {
-      case Nil => Right(Nil)
-      case Cons(_, x) => Left(x)
+      case Cons(_, x) => Some(x)
+      case _ => None
     }
   }
 
-  def head[A](as: Beans[A]): Either[A, Nil.type] = {
+  def head[A](as: Beans[A]): Option[A] = {
     as match {
-      case Cons(x, _) => Left(x)
-      case Nil => Right(Nil)
+      case Cons(x, _) => Some(x)
+      case _ => None
     }
   }
 
-//  def drop[A](list: Beans[A], n: Int): A = {
-//  }
+  def drop[A](list: Beans[A], n: Int): Beans[A] = {
+    def loop(z: Int, modTail: Beans[A]): Beans[A] = {
+      if (z == 0) modTail
+      else loop(z - 1, tail(modTail).getOrElse(Nil))
+    }
+    loop(n, list)
+  }
+
 
 
 
