@@ -1,7 +1,5 @@
 package chapter3
 
-import chapter3.Beans.x
-
 sealed trait Beans[+A]
 
 case object Nil extends Beans[Nothing]
@@ -58,6 +56,12 @@ object Beans {
     }
   }
 
+  def append[A](a1: Beans[A], a2: Beans[A]): Beans[A] =
+    a1 match {
+      case Nil => a2
+      case Cons(h, t) => Cons(h, append(t, a2))
+    }
+
   def foldRight[A, B](list: Beans[A], z: B)(f: (A, B) => B): B = {
     list match {
       case Nil => z
@@ -77,29 +81,55 @@ object Beans {
   }
 
   def sumFl(list: Beans[Int]): Int = {
-    foldLeft(list, 0)((y,z) => y + z)
+    foldLeft(list, 0)((y, z) => y + z)
   }
 
   def productFl(list: Beans[Int]): Int = {
-    foldLeft(list, 1)((y,z) => y * z)
+    foldLeft(list, 1)((y, z) => y * z)
   }
 
   def lengthFl[A](list: Beans[A]): Int = {
     foldLeft(list, 0)((z, _) => z + 1)
   }
 
-  //  def dropLast[A](list: Beans[A]): Beans[A] = {
-  //    def loop(list: Beans[A]) = {
-  //
-  //    }
-  //  }
-
-
-  val x = Beans(1, 2, 3, 4, 5) match {
-    case Cons(x, Cons(2, Cons(4, _))) => x
-    case Nil => 42
-    case Cons(x, Cons(y, Cons(3, Cons(4, _)))) => x + y
-    case Cons(h, t) => h + sum(t)
-    case _ => 101
+  def reverse[A](list: Beans[A]): Beans[A] = {
+    foldLeft(list, Beans[A]())((b, a) => Cons(a, b))
   }
+
+  def addOne(list: Beans[Int]): Beans[Int] =
+    foldRight(list, Nil: Beans[Int])((h,t) => Cons(h + 1,t))
+
+  def doubleToString(list: Beans[Double]): Beans[String] =
+    foldRight(list, Nil: Beans[String])((h,t) => Cons(h.toString, t))
+
+  def map[A,B](list: Beans[A])(f: A => B): Beans[B] =
+    foldRight(list, Nil: Beans[B])((h,t) => Cons(f(h), t))
+
+  def filter[A](list: Beans[A])(f: A => Boolean): Beans[A] =
+    dropWhile(list)(f)
+
+  def concat[A](list: Beans[Beans[A]]): Beans[A] =
+    foldRight(list, Nil:Beans[A])(append)
+
+  def flatMap[A,B](list: Beans[A])(f: A => Beans[B]): Beans[B] =
+    concat(map(list)(f))
+
+  def FMFilter[A](list: Beans[A])(f: A => Boolean): Beans[A] =
+    flatMap(list)(a => if (f(a)) Beans(a) else Nil)
+
+  def zipSummation(list1: Beans[Int], list2: Beans[Int]): Beans[Int] =
+    (list1,list2) match {
+      case (Nil, _) => Nil
+      case (_, Nil) => Nil
+      case (Cons(h1,t1), Cons(h2,t2)) => Cons(h1 + h2, zipSummation(t1,t2))
+    }
+
+  def zipWith[A](list1: Beans[A], list2: Beans[A])(f: (A, A) => A): Beans[A] =
+    (list1,list2) match {
+      case (Nil, _) => Nil
+      case (_, Nil) => Nil
+      case (Cons(h1,t1), Cons(h2,t2)) => Cons(f(h1,h2), zipWith(t1,t2)(f))
+    }
+
+
 }

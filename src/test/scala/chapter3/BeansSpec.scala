@@ -6,9 +6,6 @@ import org.scalatest.matchers.should.Matchers
 class BeansSpec extends AnyFreeSpec with Matchers {
 
   "Beans" - {
-    "equal 3" in {
-      Beans.x shouldBe 3
-    }
 
     "head(1,2,3) should be 1" in {
       Beans.head(Beans(1, 2, 3)) shouldBe Some(1)
@@ -48,6 +45,10 @@ class BeansSpec extends AnyFreeSpec with Matchers {
       Beans.foldLeft(Beans(1,2,3,4), 0)((x, y) => x + y) shouldBe 10
     }
 
+    "foldRight(1,2,3,4)(x,y => x + y) should be 10" in {
+      Beans.foldRight(Beans(1,2,3,4), 0)((x, y) => x + y) shouldBe 10
+    }
+
     "sumFl should be sum of Beans" in {
       val list = Beans(1,2,3,4)
       Beans.sumFl(list) shouldBe 10
@@ -60,6 +61,45 @@ class BeansSpec extends AnyFreeSpec with Matchers {
 
     "lengthFl should return appropriate length for Beans" in {
       Beans.lengthFl(Beans(1,2,3,4,5,6,7)) shouldBe 7
+    }
+
+    "reverse should reverse the list" in {
+      Beans.reverse(Beans(1,2,3)) shouldBe Beans(3,2,1)
+    }
+
+    "addOne should add 1 to each value in the list" in {
+      Beans.addOne(Beans(1,2,3)) shouldBe Beans(2,3,4)
+    }
+
+    "doubleToString should change each double in a list to a string" in {
+      Beans.doubleToString(Beans(1.0, 2.0, 3.0)) shouldBe Beans("1.0", "2.0", "3.0")
+    }
+
+    "map maps things" in {
+      val x = Beans(1.0, 2.0, 3.0)
+      Beans.map(x)(_.toString) shouldBe Beans("1.0", "2.0", "3.0")
+    }
+
+    "flatmap flatmaps things" in {
+      val x = Beans(1, 2, 3)
+      Beans.flatMap(x)(i => Beans(i, i)) shouldBe Beans(1,1,2,2,3,3)
+    }
+
+    "filter via flatMap" in {
+      val x = Beans(1, 2, 3)
+      Beans.FMFilter(x)(i => i < 2) shouldBe Beans(1)
+    }
+
+    "zipsummation" in {
+      val x = Beans(1, 2, 3)
+      val y = Beans(5, 7, 1)
+      Beans.zipSummation(x, y) shouldBe Beans(6,9,4)
+    }
+
+    "zipwith" in {
+      val x = Beans("pie", "eggs")
+      val y = Beans("bacon", "chimps")
+      Beans.zipWith(x, y)((a,b) => a.concat(b)) shouldBe Beans("piebacon", "eggschimps")
     }
   }
 }
