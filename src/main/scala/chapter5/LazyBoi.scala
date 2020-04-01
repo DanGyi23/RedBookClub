@@ -73,10 +73,11 @@ sealed trait Stream[+A] {
           // if n is still not 0, we must loop until it is (whilst p(h()) remains true)
         }
         else false
-        // if p(h()) ever evaluates to false, we return false immediately
+      // if p(h()) ever evaluates to false, we return false immediately
       case _ => false
-        // if this is not of the type Cons(h,t), we return false by default
+      // if this is not of the type Cons(h,t), we return false by default
     }
+
     loop(this.toListLazy.length, this)
   }
 
@@ -85,14 +86,14 @@ sealed trait Stream[+A] {
   }
 
   def takeWhileFR(p: A => Boolean): Stream[A] = {
-    foldRight(empty[A])((h,t) =>
+    foldRight(empty[A])((h, t) =>
       // into an empty Stream, conditionally fold if the head matches a predicate, otherwise stop and return Cons(StreamSoFar, empty)
-      if (p(h)) cons(h,t)
+      if (p(h)) cons(h, t)
       else empty)
   }
 
   def mapFR[B](f: A => B): Stream[B] = {
-    foldRight(empty[B])((h,t) =>
+    foldRight(empty[B])((h, t) =>
       cons(f(h), t()))
     // just apply the parameterised function to every head element as you fold
     // [1,2,3].mapFR(_ * 2) -----> 2 + (foldRight(Cons(2, Cons(3, Nil))) ------> 2 + (4 + (foldRight(Cons(3,Nil))) ------> (2 + (4 + (6 + (0))))
@@ -100,9 +101,9 @@ sealed trait Stream[+A] {
 
   def filterFR(f: A => Boolean): Stream[A] = {
     foldRight(empty[A])((h, t) =>
-    if (f(h)) cons(h, t)
+      if (f(h)) cons(h, t)
       // keeps head if f(h) is true
-    else t
+      else t
       // discards the head if (f(h)) evaluates to false
     )
   }
@@ -111,7 +112,88 @@ sealed trait Stream[+A] {
     foldRight(s)((h, t) => cons(h, t))
 
   def flatMapFR[B](f: A => Stream[B]): Stream[B] = {
-    foldRight(empty[B])((h,t) => f(h).appendFR(t))
+    foldRight(empty[B])((h, t) => f(h).appendFR(t))
+  }
 
+  def constant[A](a: A): Stream[A] = {
+    cons(a, constant(a))
+    // cons method already constructs H & T lazily, so think we can use here to infinitely add a tail of constant a to the stream
+  }
+
+  def from(n: Int): Stream[Int] = {
+    cons(n, from(n + 1))
+    // same as the above constant method, except we increment by 1
+  }
+
+  def fibs: Stream[Int] = {
+    def loop(current: Int, next: Int): Stream[Int] = {
+      cons(current, loop(next, current + next))
+    }
+
+    loop(0, 1)
+  }
+
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = {
+    f(z) match {
+      case Some((h, t)) => cons(h, unfold(t)(f))
+      case None => empty
+    }
+    // If f(z) is non-terminating, we add to the stream the result of unfold(t)(f). If it is then we terminate the stream with an empty.
+  }
+
+  def fibsUF: Stream[Int] =
+    unfold((0, 1)) {
+      case (current, next) => Some((current, (next, current + next)))
+      // we attempt an unfold with initial state current & next = (0, 1) , and pass it a function that handles additions to the stream
+      // don't need to include a termination step, because it's handled by unfold
+    }
+
+  def fromUF(n: Int): Stream[Int] =
+    unfold(n) {
+      case value => Some(value, value + 1)
+      // handles the value otherwise terminates via unfold if nothing is returned by this method.
+    }
+
+
+  def constantUF[A](a: A): Stream[A] = {
+    unfold(a) {
+      case value => Some(value, value)
+      // state is always the same value, so both S and A should be value if the result of unfold is non-empty
+    }
+  }
+
+  def onesUF[A](a: A): Stream[A] = {
+    unfold(a) {
+      case value => Some(value, value)
+      // same as constant, but could be non-generalized (use explicitly the value 1, rather than passing in a param)
+      // like unfold(1)(_ => Some(1, 1))
+    }
+  }
+
+  def mapUF[B](f: A => B): Stream[B] = {
+    unfold(this) {
+      // no value parameter for map, so unfolding this
+      case Cons(h, t) => Some(f(h()), t())
+      // apply the function continuously to the head of Stream until unfold terminates for None
+    }
+  }
+
+  def takeUF(n: Int): Stream[A] = {
+    unfold(this, n) {
+      case (Cons(h, _), 1) => Some(h(), (empty, 0))
+      // if n == 1, we just return the accumulated head
+      case (Cons(h, t), n) if n > 1 => Some(h(), (t(), n - 1))
+      // if n != 1, and we have a head and tail, we want to continue to increment by -1, creating a finite stream of heads and tails
+      // not sure if we need a case _ => None?????
+    }
+  }
+
+  def takeWhileUF(p: A => Boolean): Stream[A] = {
+    unfold(this) {
+      case Cons(h, t) if p(h()) => Some(h(), t())
+      // if p is still true, we continue to take
+      case Cons(h, _) if !p(h()) => Some(h(), empty)
+      // if p isn't true, we can force termination with the accumulated h, and empty
+    }
   }
 }
